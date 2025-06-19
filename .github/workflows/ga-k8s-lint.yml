@@ -20,4 +20,4 @@ jobs:
         run: yamllint manifests/ga-k8s-lint.yaml     ### <-- this is evaluating a specific manifest.
 
       - name: Validate Kubernetes Manifests
-        run: kubeval manifests/ga-k8s-lint.yaml   ### <-- this is evaluating a specific manifest.
+        run: kubeval manifests/ga-k8s-lint.yaml      ### <-- this is evaluating a specific manifest.
