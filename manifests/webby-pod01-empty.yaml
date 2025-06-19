@@ -1,0 +1,12 @@
+apiVersion:
+kind:
+metadata:
+  name:
+spec:
+  containers:
+  - name:
+    image: registry.gitlab.com/alta3/webby
+    ports:
+    - name:
+      containerPort: # we mapped this with the port-forward command
+      protocol: TCP
