@@ -16,3 +16,6 @@ jobs:
 
       - name: Lint YAML
         run: yamllint test/
+
+      - name: Validate Kubernetes Manifests
+        run: kubeval test/ga-k8s-lint.yaml
