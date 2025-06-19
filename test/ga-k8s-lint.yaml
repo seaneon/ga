@@ -1,5 +1,5 @@
 ---
-apiVersion: false-batch/v1
+apiVersion: falsebatch/v1
 kind: Job
 metadata:
   name: countdown
@@ -9,7 +9,7 @@ spec:
       name: countdown
     spec:
       containers:
-        - name: counter
+      - name: counter
         image: centos:7
         command:
           - "bin/bash"
