@@ -17,7 +17,7 @@ jobs:
           sudo mv kubeval /usr/local/bin/
 
       - name: Lint YAML
-        run: yamllint test/
+        run: yamllint manifests/ga-k8s-lint.yaml
 
       - name: Validate Kubernetes Manifests
-        run: kubeval test/ga-k8s-lint.yaml
+        run: kubeval manifests/ga-k8s-lint.yaml
