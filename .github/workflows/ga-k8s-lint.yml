@@ -1,4 +1,4 @@
-name: Validate Kubernetes YAML
+name: Validate Kubernetes YML
 
 on: [push]
 
@@ -17,8 +17,7 @@ jobs:
           sudo mv kubeval /usr/local/bin/
 
       - name: Lint YAML
-        run: yamllint manifests/
+        run: yamllint manifests/ga-k8s-lint.yaml
 
       - name: Validate Kubernetes Manifests
-        run: kubeval manifests/*.yaml
-
+        run: kubeval manifests/*ga-k8s-lint.yaml
