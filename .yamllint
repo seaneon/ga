@@ -1,0 +1,6 @@
+extends: relaxed
+rules:
+  indentation:
+    spaces: consistent  # Allow flexibility as long as it’s consistent
+    indent-sequences: whatever
+    check-multi-line-strings: false
