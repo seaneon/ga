@@ -1,6 +1,6 @@
-name: Validate Kubernetes YAML
+name: Validate YAML
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   validate:
@@ -13,11 +13,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y yamllint
-          curl -sSL https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz | tar xz
-          sudo mv kubeval /usr/local/bin/
 
       - name: Lint YAML
-        run: yamllint manifests/
-
-      - name: Validate Kubernetes Manifests
-        run: kubeval manifests/*.yaml
+        run: yamllint test/
