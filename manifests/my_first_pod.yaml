@@ -4,5 +4,5 @@ metadata:
   name: myfirstpod
 spec:
   containers:
-  - name: webster
+  - name: jebster
     image: registry.gitlab.com/alta3/webby:latest
