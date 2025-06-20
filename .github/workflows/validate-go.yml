@@ -63,7 +63,23 @@ jobs:
             sleep 2
           done
 
-      - name: Run Go App Briefly
+      - name: Run Go App and Test HTTP Status
         working-directory: gata3w
-        run: timeout 30s go run main.go
+        run: |
+          go run main.go &
+          SERVER_PID=$!
+          echo "Waiting for server to start..."
+          sleep 5
+
+          echo "Running curl test..."
+          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8092)
+          echo "Received HTTP status: $STATUS_CODE"
+
+          kill $SERVER_PID
+          wait $SERVER_PID 2>/dev/null || true
+
+          if [ "$STATUS_CODE" != "404" ]; then
+            echo "Expected 404 response, but got $STATUS_CODE"
+            exit 1
+          fi
 
