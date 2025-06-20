@@ -1,0 +1,65 @@
+name: Validate Go App
+
+on:
+  push:
+    paths:
+      - 'gata3w/**'
+  pull_request:
+    paths:
+      - 'gata3w/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: firmuser
+          POSTGRES_PASSWORD: firmpass
+          POSTGRES_DB: firm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PG_USER: firmuser
+      PG_PASSWORD: firmpass
+      PG_HOST: localhost
+      PG_PORT: 5432
+      PG_DB: firm
+      FIRM_USER: firmuser
+      FIRM_PASSWORD: firmpass
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - name: Verify Go Installation
+        run: go version
+
+      - name: Install Go Dependencies
+        working-directory: gata3w
+        run: go mod tidy
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run Go App
+        working-directory: gata3w
+        run: go run main.go
+
