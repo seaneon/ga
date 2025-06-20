@@ -65,5 +65,5 @@ jobs:
 
       - name: Run Go App Briefly
         working-directory: gata3w
-        run: timeout 10s go run main.go
+        run: timeout 30s go run main.go
 
