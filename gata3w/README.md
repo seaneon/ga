@@ -1,5 +1,5 @@
 # FIRM
-Passwordless Authentication Server
+The Passwordless Authentication Server
 
 FIRM is a passwordless authentication server based on draft-feeser-firm-auth-08. It uses Mailgun for inbound email webhooks, Gmail IMAP for small setups, and PostgreSQL for storage. This guide provides bash commands to install and set up FIRM on Linux/amd64 with Go 1.24.2.
 
