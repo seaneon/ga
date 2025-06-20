@@ -1,0 +1,141 @@
+name: Validate FIRM API Functionality
+
+on:
+  push:
+    paths:
+      - 'gata3w/**'
+  pull_request:
+    paths:
+      - 'gata3w/**'
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: firmuser
+          POSTGRES_PASSWORD: firmpass
+          POSTGRES_DB: firm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PG_USER: firmuser
+      PG_PASSWORD: firmpass
+      PG_HOST: localhost
+      PG_PORT: 5432
+      PG_DB: firm
+      FIRM_USER: firmuser
+      FIRM_PASSWORD: firmpass
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Install Go Dependencies
+        working-directory: gata3w
+        run: go mod tidy
+
+      - name: Compile Go App
+        working-directory: gata3w
+        run: go build -v
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run Go App and Execute Full API Integration Test
+        working-directory: gata3w
+        run: |
+          go run main.go &
+          SERVER_PID=$!
+
+          echo "Waiting for server to start..."
+          sleep 6
+
+          echo "Starting full test suite..."
+
+          USER_EMAIL="testuser@example.com"
+          ADMIN_EMAIL="your.admin@example.com"
+          API_BASE="http://localhost:8092"
+
+          # Step 1: User Signup
+          SIGNUP_RESPONSE=$(curl -s -X POST "$API_BASE/signup" \
+            -H "Content-Type: application/json" \
+            -d '{"email": "'"$USER_EMAIL"'"}')
+          echo "$SIGNUP_RESPONSE" | jq .
+
+          USER_FIRM_TOKEN=$(echo "$SIGNUP_RESPONSE" | jq -r '.token')
+          [ -z "$USER_FIRM_TOKEN" ] && echo "❌ No user token" && kill $SERVER_PID && exit 1
+
+          # Step 2: Inbound Verification
+          INBOUND_USER_RESPONSE=$(curl -s -X POST "$API_BASE/inbound" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"'"$USER_EMAIL"'","subject":"Verification '"$USER_FIRM_TOKEN"'","body":"...","headers":{"From":"'"$USER_EMAIL"'"}}')
+          echo "$INBOUND_USER_RESPONSE" | jq .
+
+          USER_REFRESH_TOKEN=$(echo "$INBOUND_USER_RESPONSE" | jq -r '.refresh_token')
+          [ -z "$USER_REFRESH_TOKEN" ] && echo "❌ No user refresh token" && kill $SERVER_PID && exit 1
+
+          # Step 3: Bootstrap Admin
+          BOOTSTRAP_RESPONSE=$(curl -s -X POST "$API_BASE/admin/bootstrap" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"'"$ADMIN_EMAIL"'"}')
+          echo "$BOOTSTRAP_RESPONSE" | jq .
+
+          MSG=$(echo "$BOOTSTRAP_RESPONSE" | jq -r '.message')
+          [[ "$MSG" != "Admin email added" && "$MSG" != "null" ]] && echo "❌ Admin bootstrap failed" && kill $SERVER_PID && exit 1
+
+          # Step 4: Signup Admin
+          ADMIN_SIGNUP_RESPONSE=$(curl -s -X POST "$API_BASE/signup" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"'"$ADMIN_EMAIL"'"}')
+          echo "$ADMIN_SIGNUP_RESPONSE" | jq .
+          ADMIN_FIRM_TOKEN=$(echo "$ADMIN_SIGNUP_RESPONSE" | jq -r '.token')
+          [ -z "$ADMIN_FIRM_TOKEN" ] && echo "❌ No admin token" && kill $SERVER_PID && exit 1
+
+          # Step 5: Admin Inbound Verification
+          ADMIN_INBOUND_RESPONSE=$(curl -s -X POST "$API_BASE/inbound" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"'"$ADMIN_EMAIL"'","subject":"Verification '"$ADMIN_FIRM_TOKEN"'","body":"...","headers":{"From":"'"$ADMIN_EMAIL"'"}}')
+          echo "$ADMIN_INBOUND_RESPONSE" | jq .
+          ADMIN_REFRESH_TOKEN=$(echo "$ADMIN_INBOUND_RESPONSE" | jq -r '.refresh_token')
+          [ -z "$ADMIN_REFRESH_TOKEN" ] && echo "❌ No admin refresh token" && kill $SERVER_PID && exit 1
+
+          # Step 6: Test Protected Admin Endpoint
+          PROTECTED_RESPONSE=$(curl -s -X GET "$API_BASE/admin/api/subnets" \
+            -H "Authorization: Bearer $ADMIN_REFRESH_TOKEN")
+          echo "$PROTECTED_RESPONSE" | jq .
+
+          if ! echo "$PROTECTED_RESPONSE" | jq -e 'type == "array"' >/dev/null; then
+            echo "❌ Admin endpoint did not return a JSON array."
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          echo "✅ All integration tests passed."
+
+          kill $SERVER_PID
+          wait $SERVER_PID 2>/dev/null || true
+
