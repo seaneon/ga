@@ -1,0 +1,15 @@
+# firm.toml
+# Configuration for FIRM server settings.
+# Edit database.url to match your PostgreSQL setup.
+
+[database]
+url = "postgres://firmuser:firmpass@localhost:5432/firm?sslmode=disable"
+
+[settings]
+cleanup_interval = "10s"
+inbound_method = "webhook"
+rate_limit_tokens_per_hour = "10"
+email_retention_period = "26280h" # Changed from "1095d" to "26280h"
+send_welcome_email = "true"
+firm_server_email = "firmserver@example.com"
+jwt_secret_key = "your_super_secret_jwt_key_please_change_this_firm_toml" # Recommended to also set via JWT_SECRET_KEY in .env

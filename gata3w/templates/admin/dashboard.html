@@ -1,0 +1,87 @@
+    {{template "layout.html" .}} {{/* IMPORTANT: This tells it to render layout.html */}}
+
+    {{define "content"}} {{/* This defines the content block for layout.html */}}
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <p class="text-lg text-gray-700">Welcome to the FIRM Admin Dashboard! Here you can monitor the system status and manage configurations.</p>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="bg-indigo-100 p-4 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-indigo-800">Total Verified Emails</h2>
+                <p id="total-verified-emails" class="text-3xl font-bold text-indigo-900 mt-2">Loading...</p>
+            </div>
+            <div class="bg-green-100 p-4 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-green-800">Active JWTs</h2>
+                <p id="active-jwts" class="text-3xl font-bold text-green-900 mt-2">Loading...</p>
+            </div>
+            <div class="bg-red-100 p-4 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-red-800">Blocked IPs Today</h2>
+                <p id="blocked-ips-today" class="text-3xl font-bold text-red-900 mt-2">Loading...</p>
+            </div>
+        </div>
+        <h2 class="text-2xl font-semibold mt-8 mb-4 text-gray-800">Recent Admin Events</h2>
+        <div class="bg-gray-50 p-4 rounded-lg shadow-sm overflow-x-auto">
+            <ul id="admin-events-list" class="divide-y divide-gray-200">
+                <li class="py-2 text-gray-500">Loading recent admin events...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const adminToken = localStorage.getItem('admin_token');
+        const apiBase = ''; // Relative path, or set to 'http://localhost:8092' if different host/port
+
+        async function fetchDashboardStats() {
+            if (!adminToken) {
+                document.getElementById('total-verified-emails').textContent = 'N/A';
+                document.getElementById('active-jwts').textContent = 'N/A';
+                document.getElementById('blocked-ips-today').textContent = 'N/A';
+                document.getElementById('admin-events-list').innerHTML = '<li class="py-2 text-red-500">Authentication required. Please set admin_token in Local Storage.</li>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiBase}/admin/api/dashboard_stats`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                document.getElementById('total-verified-emails').textContent = data.TotalVerifiedEmails;
+                document.getElementById('active-jwts').textContent = data.ActiveJWTs;
+                document.getElementById('blocked-ips-today').textContent = data.BlockedIPsToday;
+
+                const eventsList = document.getElementById('admin-events-list');
+                eventsList.innerHTML = ''; // Clear loading message
+                if (data.RecentAdminEvents && data.RecentAdminEvents.length > 0) {
+                    data.RecentAdminEvents.forEach(event => {
+                        const li = document.createElement('li');
+                        li.className = 'py-2 text-gray-700';
+                        li.innerHTML = `<span class="font-medium text-gray-900">${event.Timestamp}</span>: ${event.Actor} ${event.Action} ${event.Target || ''} (${event.Notes || ''})`;
+                        eventsList.appendChild(li);
+                    });
+                } else {
+                    eventsList.innerHTML = '<li class="py-2 text-gray-500">No recent admin events.</li>';
+                }
+
+            } catch (error) {
+                console.error('Error fetching dashboard stats:', error);
+                const errorMessage = `Error: ${error.message || 'Could not fetch data. Check server logs or JWT.'}`;
+                document.getElementById('total-verified-emails').textContent = errorMessage;
+                document.getElementById('active-jwts').textContent = '';
+                document.getElementById('blocked-ips-today').textContent = '';
+                document.getElementById('admin-events-list').innerHTML = `<li class="py-2 text-red-500">${errorMessage}</li>`;
+            }
+        }
+
+        // Fetch data when the page loads
+        window.addEventListener('load', fetchDashboardStats);
+    </script>
+    {{end}}
+    

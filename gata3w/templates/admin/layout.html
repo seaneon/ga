@@ -1,0 +1,41 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{.Title}} - FIRM Admin</title>
+        <link href="/static/css/tailwind.css" rel="stylesheet">
+        <style>
+            /* Optional custom styles for scrollbars, etc. */
+            body {
+                @apply bg-gray-100 font-sans;
+            }
+        </style>
+    </head>
+    <body class="flex h-screen">
+        <!-- Left Navigation Sidebar -->
+        <aside class="w-64 bg-gray-800 text-white flex flex-col p-4 shadow-lg">
+            <div class="text-xl font-bold mb-6 text-indigo-300">FIRM Admin</div>
+            <nav class="flex-grow">
+                <ul>
+                    <li class="mb-2"><a href="/admin/dashboard" class="block py-2 px-4 rounded hover:bg-gray-700 transition duration-150 ease-in-out">Dashboard</a></li>
+                    <li class="mb-2"><a href="/admin/emails_ui" class="block py-2 px-4 rounded hover:bg-gray-700 transition duration-150 ease-in-out">Admin Emails</a></li>
+                    <li class="mb-2"><a href="/admin/ip_ui" class="block py-2 px-4 rounded hover:bg-gray-700 transition duration-150 ease-in-out">IP Activity</a></li>
+                    <li class="mb-2"><a href="/admin/subnets_ui" class="block py-2 px-4 rounded hover:bg-gray-700 transition duration-150 ease-in-out">Banned Subnets</a></li>
+                    <li class="mb-2"><a href="/admin/settings_ui" class="block py-2 px-4 rounded hover:bg-gray-700 transition duration-150 ease-in-out">Settings</a></li>
+                    <li class="mb-2"><a href="/admin/logs_ui" class="block py-2 px-4 rounded hover:bg-gray-700 transition duration-150 ease-in-out">Admin Logs</a></li>
+                    <li class="mb-2"><a href="/logout" class="block py-2 px-4 rounded hover:bg-red-700 transition duration-150 ease-in-out">Logout</a></li>
+                </ul>
+            </nav>
+            <div class="mt-auto text-sm text-gray-400">
+                FIRM Server v1.0
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-auto p-6">
+            {{block "content" .}}<!-- Default content if not overridden -->{{end}}
+        </main>
+    </body>
+    </html>
+    
